@@ -1,0 +1,53 @@
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2); /* Легкий градиентный фон для всей страницы */
+            font-family: Arial, sans-serif; /* Шрифт для страницы */
+            margin: 0;
+            padding: 0;
+            color: black;
+        }
+
+        #cy {
+            width: 600px; /* Начальная ширина графа */
+            height: 400px; /* Начальная высота графа */
+            border: 2px solid #3a3a3a; /* Темный бордер для контрастности */
+            margin-bottom: 70px; /* Отступ снизу для кнопок */
+            background: #ffffff; /* Белый фон для контейнера графа */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Легкая тень для создания глубины */
+        }
+
+        #increaseSize, #decreaseSize {
+            position: fixed;
+            bottom: 10px; /* Расстояние от нижнего края страницы */
+            background: linear-gradient(45deg, #ff6b6b, #f06595); /* Градиентный фон кнопок */
+            color: #ffffff;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Тень для кнопок */
+            transition: background 0.3s ease, transform 0.3s ease; /* Плавные переходы */
+        }
+
+        #increaseSize {
+            right: 180px; /* Расстояние от правого края страницы для первой кнопки */
+        }
+
+        #decreaseSize {
+            right: 10px; /* Расстояние от правого края страницы для второй кнопки */
+        }
+
+        /* Hover и активные эффекты для кнопок */
+        #increaseSize:hover, #decreaseSize:hover {
+            background: linear-gradient(45deg, #f06595, #ff6b6b); /* Переворачиваем градиент при наведении */
+            transform: scale(1.05); /* Немного увеличиваем размер кнопки при наведении */
+        }
+
+        #increaseSize:active, #decreaseSize:active {
+            background: linear-gradient(45deg, #d0486a, #e44a5e); /* Темнее градиент при нажатии */
+            transform: scale(0.95); /* Уменьшаем размер кнопки при нажатии */
+        }
+#container{
+    width: 100px;
+    color: black;
+}

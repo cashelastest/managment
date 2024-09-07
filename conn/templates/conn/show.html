@@ -1,0 +1,177 @@
+{% extends "conn/base.html" %}
+
+{% block content %}
+
+
+	<h1>Tasks</h1>
+    
+	<div id="cy" style="width: 70%; height: 400px;">
+	</div>
+ <div id="container">
+<form id="layoutForm" method="GET">
+    <label for="layout">Choose layouts:</label>
+    <select id="layout" name="layout" multiple="multiple" style="width: 100%;">
+        {% for layout in layouts %}
+        <option value="{{ layout.id }}">{{ layout.name }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Submit</button>
+</form>
+
+        <!-- Место для отображения выбранных вариантов -->
+        <div id="results"></div>
+    </div>
+
+    <!-- jQuery -->
+
+    <script>
+        $(document).ready(function() {
+            // Инициализация Select2 для поля выбора
+            $('#layout').select2({
+                placeholder: 'Select layouts',
+                allowClear: true
+            });
+        });
+
+        function updateResults() {
+            // Получение выбранных значений из мульти-селекта
+            let selectedLayouts = $('#layout').val();
+            
+            // Обновление HTML с выбранными вариантами
+            let resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<h3>Selected Layouts:</h3><ul>';
+            selectedLayouts.forEach(function(layout) {
+                let listItem = document.createElement('li');
+                listItem.textContent = layout;
+                resultsDiv.appendChild(listItem);
+            });
+            resultsDiv.innerHTML += '</ul>';
+        }
+    </script>
+
+
+
+
+<!-- Место для отображения выбранных вариантов -->
+<div id="results"></div>
+<p align="right">
+    <button id="increaseSize">Increase Size</button>
+    <button id="decreaseSize">Decrease Size</button></p>
+
+
+
+
+
+
+
+	<script>
+
+		document.addEventListener('DOMContentLoaded', function() {
+			cytoscape.use(cytoscapeDagre);
+			var cy = cytoscape({
+				container: document.getElementById('cy'),
+
+				elements: [
+					{% for task in object_list %}
+					// console.log("{{task.color}}")
+						{ data: { id: '{{ task.id }}', label: '{{ task.title }}\nВажность: {{ task.important }}\n Введет к {{task.toGoal}} целям',color:"{{task.color}}"}},  // Узел задачи
+						{% for connection in task.connections.all %}
+							{ data: { source: '{{ task.id }}', target: '{{ connection.id }}' } },  // Связь между задачами
+						{% endfor %}
+					{% endfor %}
+				],
+
+				style: [
+                  {
+                        selector: 'node',
+                        style: {
+
+                            'height': '60px', /* Height of nodes */
+                            'font-size': '12px',
+                            'text-wrap': 'wrap',
+
+                            'background-color': "data(color)", /* Pink background for nodes */
+                            'label': 'data(label)',
+                            'text-halign': 'center',  /* Horizontal alignment of text */
+                            'text-valign': 'center',  /* Vertical alignment of text */
+                            'border-width': '2px',  /* Border thickness */
+                            'border-color': 'black', /* Border color */
+                            'shape': 'roundrectangle', /* Shape of the node (rectangle) */
+                            'border-radius': '10px',
+                            'text-max-width': '150px' /* Radius for rounded corners (making it circular) */
+                        }
+                    },
+
+  {
+    selector: 'edge',
+    style: {
+      'width': 3,  // Толщина линии
+      'line-color': 'linear-gradient(#ff1493, #ff69b4)',  // Градиент для линии
+      'target-arrow-shape': 'triangle',  // Треугольная стрелка на конце
+      'target-arrow-color': 'black',
+      'curve-style': 'bezier',  // Использование кривых для линий
+      'opacity': 0.8,  // Легкая прозрачность линий
+      'line-style': 'solid'  // Твердая линия
+    }
+  },
+  {
+    selector: 'edge.highlighted',
+    style: {
+      'line-color': '#ff1493',  // Цвет линии при выделении
+      'target-arrow-color': '#ff69b4',
+      'width': 5  // Увеличенная толщина при выделении
+    }
+  }
+				],
+
+layout: {
+	name: 'dagre',
+	rankDir: 'LR',
+	rankSep: 300,
+	padding: 50,
+	fit: true
+
+},
+    minZoom: 0.1,  // Минимальный масштаб
+    maxZoom: 19,    // Максимальный масштаб
+    zoom: 0.8, 
+			});
+
+            function resizeGraph() {
+                var cyContainer = document.getElementById('cy');
+                var currentWidth = cyContainer.offsetWidth;
+                var currentHeight = cyContainer.offsetHeight;
+                cyContainer.style.width = (currentWidth + 200) + 'px';
+                cyContainer.style.height = (currentHeight + 100) + 'px';
+                
+                // Обновляем размеры графа
+                cy.resize(); // Обновляем размеры контейнера
+                cy.layout({ name: 'dagre',rankDir: 'LR',rankSep: 125, padding: 50,fit: true}).run(); // Перезапускаем layout для корректного отображения
+            }
+
+            // Кнопка увеличения размера
+            document.getElementById('increaseSize').addEventListener('click', function() {
+                resizeGraph();
+            });
+
+            // Кнопка уменьшения размера
+            document.getElementById('decreaseSize').addEventListener('click', function() {
+                var cyContainer = document.getElementById('cy');
+                var currentWidth = cyContainer.offsetWidth;
+                var currentHeight = cyContainer.offsetHeight;
+                cyContainer.style.width = (currentWidth - 200) + 'px';
+                cyContainer.style.height = (currentHeight - 100) + 'px';
+                
+                // Обновляем размеры графа
+                cy.resize(); // Обновляем размеры контейнера
+                cy.layout({ name: 'dagre',rankDir: 'LR',rankSep: 125, padding: 50,fit: true}).run(); // Перезапускаем layout для корректного отображения
+            });
+                 cy.nodes().forEach(function(node) {
+            var label = node.data('label');
+            var width = Math.max(20, label.length * 4);  // Adjust width based on label length
+            node.style('width', width + 'px');
+        });
+
+        });
+	</script>
+{% endblock %}

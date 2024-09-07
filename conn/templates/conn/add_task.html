@@ -1,0 +1,12 @@
+{%extends 'conn/base.html'%}
+
+{%block content%}
+<form method="POST">
+{%csrf_token%}
+{%for f in form%}
+<p><label for="{{f.label.id}}">{{f.label}}:</label><p>&emsp;{{f}}</p></p>
+{%endfor%}
+<button type="submit">SUBMIT</button>
+</form>
+
+{%endblock%}
