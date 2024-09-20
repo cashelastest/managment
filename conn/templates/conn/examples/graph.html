@@ -1,0 +1,250 @@
+Цвет фона: <input id = "color" type="color">
+<br>
+<br>
+цвет текста: <input id = 'textColor' type = 'color' value = ' '>
+<br>
+<br>
+Цвет border <input id = 'borderColor' type = 'color'>
+<br>
+Присвоить цвет к таскам:
+<br>
+Done <input id = "isDoneFilter" type="radio" name="drone" value = "Done">
+custom logic <input id = "" type="radio" name="drone">
+Важности <input id = "" type="radio" name="drone">
+Целям <input id = "" type="radio" name="drone">
+
+
+<br>
+<button onclick="changeColor()">Change</button>
+<div id="cy" style="width: 70%; height: 400px;">
+    </div>
+
+<script>
+        function saveNodeColor(nodeId, newColor, textColor, borderColor) {
+        $.ajax({
+            url: '',
+            method:"POST",
+            data:{
+                node_id:nodeId,
+                new_color: newColor,
+                text_color: textColor,
+                border_color:borderColor,
+                csrfmiddlewaretoken:"{{csrf_token}}"
+            },
+            success:function(response){
+                if (response.status==="success") {
+                    console.log("success")
+                }else{
+                    console.log(response.message)
+                }
+            },
+            error:function(){
+                console.log("request failed")
+            }
+        });
+    }
+    var nodeColor = '';
+    var cy; // Объявляем cy глобально
+
+    // Функция для изменения цвета узлов
+    function changeColor() {
+        // Получаем значение цвета из input-поля
+    var color = $("#color").val();
+    var textColor = $("#textColor").val();
+    var borderColor = $("#borderColor").val();
+    var coloring = $("input[type='radio'][name='drone']:checked").val();
+
+    console.log(coloring)
+    // Применяем новый цвет ко всем узлам
+    if (color || textColor || borderColor) {
+        cy.nodes().forEach(function(node) {
+            // Получаем данные о вузле
+            var nodeId = node.data('id');
+            console.log("Node name:", nodeId);  // Выводим имя узла
+
+            // Применяем изменения цвета, если они заданы
+            if (color) {
+                node.style('background-color', color);
+            }
+            if (textColor) {
+                node.style('color', textColor);  // Изменение цвета текста
+            }
+            if (borderColor) {
+                node.style('border-color', borderColor);  // Изменение цвета границы
+            }
+                    saveNodeColor(nodeId, color, textColor,borderColor)
+        });
+
+        // Очищаем input-поля после применения изменений
+        $("#color").val('');
+        $("#textColor").val('');
+        $("#borderColor").val('');
+
+    } else {
+        console.log("Colors are empty");
+    }
+
+    }
+
+document.addEventListener('DOMContentLoaded', function() {
+    cytoscape.use(cytoscapeDagre);
+    
+    cy = cytoscape({
+        container: document.getElementById('cy'),
+
+        elements: [],  // Изначально пустой список элементов
+
+        style: [
+            {
+                selector: 'node',
+                style: {
+                    'height': '60px', 
+                    'font-size': '12px',
+                    'text-wrap': 'wrap',
+                    'background-color': 'data(color)',
+                    'label': 'data(label)',
+                    'color':'data(textColor)',
+                    'text-halign': 'center',  
+                    'text-valign': 'center',  
+                    'border-width': '2px',  
+                    'border-color': 'data(borderColor)',
+                    'shape': 'roundrectangle', 
+                    'text-max-width': '150px'
+                }
+            },
+            {
+                selector: 'edge',
+                style: {
+                    'width': 3,  
+                    'line-color': '#ff69b4',  
+                    'target-arrow-shape': 'triangle',  
+                    'target-arrow-color': 'black',
+                    'curve-style': 'bezier',  
+                    'opacity': 0.8,
+                    'line-style': 'solid'
+                }
+            },
+            {
+                selector: 'edge.highlighted',
+                style: {
+                    'line-color': '#ff1493',  
+                    'target-arrow-color': '#ff69b4',
+                    'width': 5 
+                }
+            }
+        ],
+
+        layout: {
+            name: 'dagre',
+            rankDir: 'LR', 
+            rankSep: 300,
+            padding: 50,
+            fit: true
+        },
+
+        minZoom: 0.1,  
+        maxZoom: 19,    
+        zoom: 0.8
+    });
+
+    {% for task in tasks %}
+    // Добавляем узлы
+    cy.add({
+        group: 'nodes',
+        data: { 
+            id: '{{ task.id }}', 
+            label: '{{ task.title }}\nВажность: {{ task.important }}\nВедет к {{task.toGoal}} целям', 
+            color: '{{task.color}}',
+            textColor: '{{task.textColor}}',
+            borderColor: '{{task.borderColor}}'
+        }
+    });
+
+    // Обрабатываем связи (ребра) с проверкой наличия узлов
+    {% for connection in task.connections.all %}
+    try {
+        var targetExists = cy.getElementById('{{ connection.id }}').length > 0;
+        
+        if (targetExists) {
+            cy.add({
+                group: 'edges',
+                data: { 
+                    source: '{{ task.id }}', 
+                    target: '{{ connection.id }}' 
+                }
+            });
+        } else {
+            console.warn(`Целевой узел с id: {{ connection.id }} не существует.`);
+        }
+    } catch (error) {
+        console.error(`Ошибка при создании ребра для связи с id: {{ connection.id }}`, error);
+    }
+    {% endfor %}
+    {% endfor %}
+
+    // Перезапуск layout после добавления всех элементов
+    cy.layout({
+        name: 'dagre',
+        rankDir: 'LR', 
+        rankSep: 300, 
+        padding: 50, 
+        fit: true
+    }).run();
+
+    // Логика изменения размеров графа
+    function resizeGraph(deltaWidth, deltaHeight) {
+        var cyContainer = document.getElementById('cy');
+        var newWidth = cyContainer.offsetWidth + deltaWidth;
+        var newHeight = cyContainer.offsetHeight + deltaHeight;
+        cyContainer.style.width = newWidth + 'px';
+        cyContainer.style.height = newHeight + 'px';
+
+        cy.resize();
+        cy.layout({
+            name: 'dagre',
+            rankDir: 'LR', 
+            rankSep: 125, 
+            padding: 50, 
+            fit: true
+        }).run();
+    }
+
+    // Кнопка увеличения размера
+    document.getElementById('increaseSize').addEventListener('click', function() {
+        resizeGraph(200, 100);  // Увеличиваем ширину и высоту
+    });
+
+    // Кнопка уменьшения размера
+    document.getElementById('decreaseSize').addEventListener('click', function() {
+        resizeGraph(-200, -100);  // Уменьшаем ширину и высоту
+    });
+
+    // Автоматическая подгонка ширины узлов под длину текста
+    cy.nodes().forEach(function(node) {
+        var label = node.data('label');
+        var width = Math.max(100, label.length * 6);  // Минимальная ширина 100px
+        node.style('width', width + 'px');
+
+    });
+
+
+
+        cy.on('tap', 'node', function(event) {
+        var node = event.target;
+        var nodeId = node.id();
+        var nodeLabel = node.data('label');
+        var nodeColor = node.data('color');
+
+
+
+        // Пример изменения цвета узла при клике
+        var newColor = prompt('Enter new color for this node:', nodeColor);
+        if (newColor) {
+            node.style('background-color', newColor);
+            node.data('color', newColor); // Обновляем данные узла
+            saveNodeColor(nodeId, newColor, "", "")
+        }
+    });
+});
+
+	</script>
