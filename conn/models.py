@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
+from users.models import *
 class Layout(models.Model):
 	name = models.CharField(max_length=255)
 	slug = models.SlugField()
@@ -12,14 +13,17 @@ class Task(models.Model):
 	title = models.CharField(max_length = 255)
 	slug = models.SlugField()
 	description = models.TextField()
-	important = models.FloatField()
+	requirement_skills = models.TextField(default = "No special skills")
+	weight = models.FloatField()
 	isDone = models.BooleanField(default = False)
-	connections = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='related_tasks')
+	previous_connections = models.ManyToManyField('self', blank=True, symmetrical=False, related_name='related_tasks')
+	workers = models.ManyToManyField(Profile, null =True)
+	deadline = models.DateTimeField(null = True, blank = True)
+	started = models.DateTimeField(null = True, blank = True)
+	price = models.FloatField(null = True)
 	isStart = models.BooleanField(default = False)
 	isFinish = models.BooleanField(default = False)
-	toGoal = models.PositiveIntegerField(default = 0)
-	color = models.CharField(max_length= 255, default = "green")
-	layout = models.ManyToManyField(Layout, null = True)
+
 
 	def save(self, *args, **kwargs):
 		self.slug = slugify(self.title)
@@ -27,9 +31,3 @@ class Task(models.Model):
 	def __str__(self):
 		return self.title
 
-
-class Connector(models.Model):
-	startTask = models.ForeignKey(Task, on_delete = models.CASCADE, related_name = "start",verbose_name = "start")
-	finishTask = models.ForeignKey(Task, related_name = "finish",on_delete =models.CASCADE)
-
-	isFinish = models.BooleanField(default = False)
